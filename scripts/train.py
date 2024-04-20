@@ -3,10 +3,13 @@ import logging
 import os
 import random
 
+import sys
+sys.path.append("D:\\FinalProject\\Demo\\niki_origin\\NIKI")
+
 import numpy as np
 import torch
 from niki.datasets.naive_dataset_temporal import (
-    mix_temporal_dataset_full_wamass, mix_temporal_dataset_full_woamass,
+    mix_temporal_dataset_full_woamass,
     mix_temporal_dataset_full_wocc, mix_temporal_dataset_wamass,
     naive_dataset_temporal,
     mix_temporal_dataset_full_wcoco)
@@ -154,22 +157,22 @@ def main():
         # train_dataset = mix_temporal_dataset_gendered_wocc(opt.DATASET.train_paths, none_paths, train=True, usage='xyz', occlusion=data_occ)
     elif opt.DATASET.name == 'wo_hp3d_w_amass':
         train_dataset = mix_temporal_dataset_wamass(
-            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=data_occ, img_feat_size=img_feat_size)
+            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=False, img_feat_size=img_feat_size)
     elif opt.DATASET.name == 'w_hp3d':
         train_dataset = mix_temporal_dataset_full_woamass(
-            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=data_occ, img_feat_size=img_feat_size)
+            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=False, img_feat_size=img_feat_size)
     elif opt.DATASET.name == 'w_coco':
         train_dataset = mix_temporal_dataset_full_wcoco(
-            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=data_occ, img_feat_size=img_feat_size)
+            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=False, img_feat_size=img_feat_size)
     elif opt.DATASET.name == 'wocc':
         train_dataset = mix_temporal_dataset_full_wocc(
-            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=data_occ, wrong_flip_aug=True, img_feat_size=img_feat_size)
+            opt.DATASET.train_paths, none_paths, opt=opt, train=True, usage='xyz', occlusion=False, wrong_flip_aug=True, img_feat_size=img_feat_size)
     else:
         print(opt.dataset)
         raise NotImplementedError
 
     valid_dataset_pred_h36m = naive_dataset_temporal(
-        opt.DATASET.valid_paths['h36m_xocc'], '', dataset_name='h36m', train=False, usage='xyz', occlusion=data_occ, seq_len=opt.seq_len)
+        opt.DATASET.valid_paths['h36m'], '', dataset_name='h36m', train=False, usage='xyz', occlusion=False,seq_len=opt.seq_len)
     if gendered_smpl:
         pass
     elif opt.DATASET.name == 'w_3doh':
@@ -180,10 +183,10 @@ def main():
 
         valid_loader_pred_3doh = torch.utils.data.DataLoader(
             valid_dataset_pred_3doh, batch_size=32, shuffle=False,
-            num_workers=4, drop_last=False, persistent_workers=True)
+            num_workers=0, drop_last=False, persistent_workers=False)
     else:
         valid_dataset_pred_pw3d = naive_dataset_temporal(
-            opt.DATASET.valid_paths['3dpw_xocc'], '', dataset_name='pw3d', train=False, usage='xyz', occlusion=data_occ, seq_len=opt.seq_len)
+            opt.DATASET.valid_paths['3dpw_xocc'], '', dataset_name='pw3d', train=False, usage='xyz', occlusion=False, seq_len=opt.seq_len)
 
     valid_dataset_pred_h36m_noocc = naive_dataset_temporal(
         opt.DATASET.valid_paths['h36m'], '', dataset_name='h36m', train=False, usage='xyz', occlusion=False, seq_len=opt.seq_len)
@@ -192,24 +195,24 @@ def main():
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=opt.train_batch, shuffle=True,
-        num_workers=opt.num_workers, drop_last=False, persistent_workers=True,
+        num_workers=opt.num_workers, drop_last=False, persistent_workers=False,
         worker_init_fn=_init_fn)
 
     valid_loader_pred_h36m = torch.utils.data.DataLoader(
         valid_dataset_pred_h36m, batch_size=32, shuffle=False,
-        num_workers=4, drop_last=False, persistent_workers=True)
+        num_workers=0, drop_last=False, persistent_workers=False)
 
     valid_loader_pred_pw3d = torch.utils.data.DataLoader(
         valid_dataset_pred_pw3d, batch_size=32, shuffle=False,
-        num_workers=4, drop_last=False, persistent_workers=True)
+        num_workers=0, drop_last=False, persistent_workers=False)
 
     valid_loader_pred_h36m_noocc = torch.utils.data.DataLoader(
         valid_dataset_pred_h36m_noocc, batch_size=32, shuffle=False,
-        num_workers=4, drop_last=False, persistent_workers=True)
+        num_workers=0, drop_last=False, persistent_workers=False)
 
     valid_loader_pred_pw3d_noocc = torch.utils.data.DataLoader(
         valid_dataset_pred_pw3d_noocc, batch_size=32, shuffle=False,
-        num_workers=4, drop_last=False, persistent_workers=True)
+        num_workers=0, drop_last=False, persistent_workers=False)
 
     lr = 1e-4
 
@@ -299,6 +302,7 @@ def train(train_loader, optimizer, criterion, model, epoch=0):
     train_loader = tqdm(train_loader, dynamic_ncols=True)
 
     for i, item in enumerate(train_loader):
+        print("i = ", i)
         for k, _ in item.items():
             if isinstance(item[k], torch.Tensor):
                 item[k] = item[k].cuda()
@@ -313,7 +317,7 @@ def train(train_loader, optimizer, criterion, model, epoch=0):
             'pred_beta': item['pred_betas'],
             'pred_phi': item['pred_phi'],
             'pred_cam': item['pred_cam'],
-            'img_feat': item['img_feat']
+            # 'img_feat': item['img_feat']
         }
 
         batch_size = item['pred_xyz_29'].shape[0]

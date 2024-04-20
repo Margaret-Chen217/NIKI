@@ -23,7 +23,7 @@ def compute_similarity_transform(S1, S2):
     X2 = S2 - mu2
 
     # 2. Compute variance of X1 used for scale.
-    var1 = np.sum(X1**2)
+    var1 = np.sum(X1 ** 2)
 
     # 3. The outer product of X1 and X2.
     K = X1.dot(X2.T)
@@ -110,7 +110,7 @@ def cam2pixel_matrix(cam_coord, intrinsic_param):
     cam_homogeneous_coord = np.concatenate(
         (cam_coord, np.ones((1, cam_coord.shape[1]), dtype=np.float32)), axis=0)
     img_coord = np.dot(intrinsic_param, cam_homogeneous_coord) / \
-        (cam_coord[2, :] + 1e-8)
+                (cam_coord[2, :] + 1e-8)
     img_coord = np.concatenate((img_coord[:2, :], cam_coord[2:3, :]), axis=0)
     return img_coord.transpose(1, 0)
 
@@ -124,7 +124,6 @@ def pixel2cam(pixel_coord, f, c):
 
 
 def pixel2cam_matrix(pixel_coord, intrinsic_param):
-
     x = (pixel_coord[:, 0] - intrinsic_param[0][2]) / \
         intrinsic_param[0][0] * pixel_coord[:, 2]
     y = (pixel_coord[:, 1] - intrinsic_param[1][2]) / \
@@ -168,7 +167,6 @@ def normalize_uv_temporal(uv, bbox, scale=1):
 
 
 def calc_cam_scale_trans_refined1(xyz_29, uv_29, uvd_weight, img_center):
-
     # the equation to be solved:
     # u_256 / f * (1-cx/u) * (z + tz) = x + tx
     #   -> (u - cx) * (z * 1/f + tz/f) = x + tx
@@ -224,9 +222,9 @@ def calc_cam_scale_trans_refined1(xyz_29, uv_29, uvd_weight, img_center):
 
     backed_projected_xyz = back_projection_matrix(
         uv_29_fullsize, xyz_29, target_camera, img_center)
-    diff = np.sum((backed_projected_xyz - xyz_29)**2, axis=-1) * weight[:, 0]
+    diff = np.sum((backed_projected_xyz - xyz_29) ** 2, axis=-1) * weight[:, 0]
     diff = np.sqrt(diff).sum() / (weight.sum() + 1e-6) * \
-        1000  # roughly mpjpe > 70
+           1000  # roughly mpjpe > 70
 
     out = np.zeros(3)
     out[1:] = cam_para[1:]
@@ -236,12 +234,11 @@ def calc_cam_scale_trans_refined1(xyz_29, uv_29, uvd_weight, img_center):
 
 
 def calc_cam_scale_trans(xyz_29, uv_29, uvd_weight, f=1000.0, img_center=None):
-
-    # the equation to be solved: 
+    # the equation to be solved:
     # u * 256 / f * (z + f/256 * 1/scale) = x + tx
     # v * 256 / f * (z + f/256 * 1/scale) = y + ty
 
-    weight = (uvd_weight.sum(axis=-1, keepdims=True) >= 3.0) * 1.0 # 24 x 1
+    weight = (uvd_weight.sum(axis=-1, keepdims=True) >= 3.0) * 1.0  # 24 x 1
     # assert weight.sum() >= 2, 'too few valid keypoints to calculate cam para'
 
     if weight.sum() < 2:
@@ -280,6 +277,62 @@ def calc_cam_scale_trans(xyz_29, uv_29, uvd_weight, f=1000.0, img_center=None):
     return scale_trans, 1.0, 0.0
 
 
+def calc_cam_scale_trans_const_scale(xyz_29, uv_29, uvd_weight, scale, img_center):
+    # the equation to be solved:
+    # u_256 / f * (1-cx/u) * (z + tz) = x + tx
+    #   -> (u - cx) * (z * 1/f + tz/f) = x + tx
+    #
+    # v_256 / f * (1-cy/v) * (z + tz) = y + ty
+
+    # return: tx, ty
+
+    weight = (uvd_weight.sum(axis=-1, keepdims=True) >= 3.0) * 1.0  # 29 x 1
+    # assert weight.sum() >= 2, 'too few valid keypoints to calculate cam para'
+
+    uv_29_fullsize = uv_29 * 256.0
+    uv_c_diff = uv_29_fullsize - img_center
+
+    if weight.sum() <= 2:
+        # print('bad data')
+        return np.zeros(2), 0.0, -1
+
+    num_joints = len(uv_29)
+
+    Ax = np.zeros((num_joints, 2))
+    Ax[:, 0] = -1
+
+    Ay = np.zeros((num_joints, 2))
+    Ay[:, 1] = -1
+
+    Ax = Ax * weight
+    Ay = Ay * weight
+
+    A = np.concatenate([Ax, Ay], axis=0)
+
+    bx = (xyz_29[:, 0] - uv_c_diff[:, 0] * xyz_29[:, 2] * scale) * weight[:, 0]
+    by = (xyz_29[:, 1] - uv_c_diff[:, 1] * xyz_29[:, 2] * scale) * weight[:, 0]
+    b = np.concatenate([bx, by], axis=0)
+
+    A_s = np.dot(A.T, A)
+    b_s = np.dot(A.T, b)
+
+    cam_para = np.linalg.solve(A_s, b_s)
+
+    tx, ty = cam_para
+
+    target_camera = np.zeros(3)
+    target_camera[0] = 1.0 / scale
+    target_camera[1:] = np.array([tx, ty])
+
+    backed_projected_xyz = back_projection_matrix(
+        uv_29_fullsize, xyz_29, target_camera, img_center)
+    diff = np.sum((backed_projected_xyz - xyz_29) ** 2, axis=-1) * weight[:, 0]
+    diff = np.sqrt(diff).sum() / (weight.sum() + 1e-6) * \
+           1000  # roughly mpjpe > 70
+
+    return cam_para, 1.0, diff
+
+
 def back_projection(uvd, xyz, pred_camera, focal_length=5000.):
     camScale = pred_camera[:1].reshape(1, -1)
     camTrans = pred_camera[1:].reshape(1, -1)
@@ -289,7 +342,7 @@ def back_projection(uvd, xyz, pred_camera, focal_length=5000.):
     pred_xyz = np.zeros_like(xyz)
     pred_xyz[:, 2] = xyz[:, 2].copy()
     pred_xyz[:, :2] = (uvd[:, :2] * 256 / focal_length) * \
-        (pred_xyz[:, 2:] + camDepth) - camTrans
+                      (pred_xyz[:, 2:] + camDepth) - camTrans
 
     return pred_xyz
 
@@ -326,7 +379,7 @@ def back_projection_batch(uvd, xyz, pred_camera, focal_length=1000.):
     pred_xyz = np.zeros_like(xyz)
     pred_xyz[:, :, 2] = xyz[:, :, 2].copy()
     pred_xyz[:, :, :2] = (uvd[:, :, :2] * 256 / focal_length) * \
-        (pred_xyz[:, :, 2:] + camDepth) - camTrans
+                         (pred_xyz[:, :, 2:] + camDepth) - camTrans
 
     return pred_xyz
 
@@ -383,9 +436,9 @@ class Error_Score_Evaluator:
         # print(kpt_err[valid_mask].mean(), self.gm_mean, self.gm_cov)
 
         marginal_mean = self.gm_mean[1] + self.gm_cov[1, 0] / \
-            self.gm_cov[0, 0] * (kpt_err - self.gm_mean[0])
+                        self.gm_cov[0, 0] * (kpt_err - self.gm_mean[0])
         marginal_var = self.gm_cov[1, 1] - self.gm_cov[1,
-                                                       0] / self.gm_cov[0, 0] * self.gm_cov[0, 1]
+        0] / self.gm_cov[0, 0] * self.gm_cov[0, 1]
 
         score = np.random.rand(len(kpt_err))
         score *= np.sqrt(marginal_var)

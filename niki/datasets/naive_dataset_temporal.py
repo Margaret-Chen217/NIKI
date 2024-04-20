@@ -101,16 +101,16 @@ class mix_temporal_dataset_full_woamass(data.Dataset):
             gt_paths[0], pred_paths[0], 'h36m', train=train,
             usage=usage, use_amass=True, occlusion=occlusion,
             use_pretrained_feat=use_pretrained_feat, seq_len=seq_len,
-            load_img=load_img)
+            )
         self.pw3d_dataset = naive_dataset_temporal(
             gt_paths[1], pred_paths[1], 'pw3d', train=train,
             usage=usage, use_amass=True, occlusion=occlusion,
             use_pretrained_feat=use_pretrained_feat, seq_len=seq_len,
-            load_img=load_img)
-        self.hp3d_dataset = hp3d_dataset_temporal(
-            gt_paths[2], pred_paths[2], 'hp3d', train=train,
-            usage=usage, use_amass=True, use_pretrained_feat=use_pretrained_feat,
-            seq_len=seq_len, load_img=load_img)
+            )
+        # self.hp3d_dataset = hp3d_dataset_temporal(
+        #     gt_paths[2], pred_paths[2], 'hp3d', train=train,
+        #     usage=usage, use_amass=True, use_pretrained_feat=use_pretrained_feat,
+        #     seq_len=seq_len, load_img=load_img)
 
     def __len__(self):
         data_len = len(self.h36m_dataset) // 3
@@ -120,15 +120,15 @@ class mix_temporal_dataset_full_woamass(data.Dataset):
 
     def __getitem__(self, idx):
         p = random.random()
-        if p < 0.4:
+        if p < 0.5:
             new_idx = random.randint(0, len(self.h36m_dataset) - 1)
             return self.h36m_dataset[new_idx]
-        elif p < 0.8:
+        else:
             new_idx = random.randint(0, len(self.pw3d_dataset) - 1)
             return self.pw3d_dataset[new_idx]
-        else:
-            new_idx = random.randint(0, len(self.hp3d_dataset) - 1)
-            return self.hp3d_dataset[new_idx]
+        # else:
+        #     new_idx = random.randint(0, len(self.hp3d_dataset) - 1)
+        #     return self.hp3d_dataset[new_idx]
         # else:
         #     new_idx = random.randint(0, len(self.amass_dataset) - 1)
         #     return self.amass_dataset[new_idx]
@@ -144,8 +144,8 @@ class mix_temporal_dataset_full_wocc(data.Dataset):
             gt_paths[0], pred_paths[0], 'h36m', train=train, usage=usage, use_amass=True, use_pretrained_feat=use_pretrained_feat, wrong_flip_aug=wrong_flip_aug, seq_len=seq_len)
         self.pw3d_dataset = naive_dataset_temporal(
             gt_paths[1], pred_paths[1], 'pw3d', train=train, usage=usage, use_amass=True, use_pretrained_feat=use_pretrained_feat, wrong_flip_aug=wrong_flip_aug, seq_len=seq_len)
-        self.hp3d_dataset = hp3d_dataset_temporal(
-            gt_paths[2], pred_paths[2], 'hp3d', train=train, usage=usage, use_amass=True, use_pretrained_feat=use_pretrained_feat, seq_len=seq_len)
+        # self.hp3d_dataset = hp3d_dataset_temporal(
+        #     gt_paths[2], pred_paths[2], 'hp3d', train=train, usage=usage, use_amass=True, use_pretrained_feat=use_pretrained_feat, seq_len=seq_len)
         if not simulated_amass:
             self.amass_dataset = amass_dataset_temporal(
                 usage=usage, occlusion=occlusion, use_pretrained_feat=use_pretrained_feat, use_flip=self.use_flip, wrong_flip_aug=wrong_flip_aug, seq_len=seq_len, img_feat_size=img_feat_size)
@@ -206,13 +206,11 @@ class mix_temporal_dataset_full_wcoco(data.Dataset):
         self.h36m_dataset = naive_dataset_temporal(
             gt_paths[0], pred_paths[0], 'h36m', train=train,
             usage=usage, use_amass=True, occlusion=occlusion,
-            use_pretrained_feat=use_pretrained_feat, seq_len=seq_len,
-            load_img=load_img)
+            use_pretrained_feat=use_pretrained_feat, seq_len=seq_len)
         self.pw3d_dataset = naive_dataset_temporal(
             gt_paths[1], pred_paths[1], 'pw3d', train=train,
             usage=usage, use_amass=True, occlusion=occlusion,
-            use_pretrained_feat=use_pretrained_feat, seq_len=seq_len,
-            load_img=load_img)
+            use_pretrained_feat=use_pretrained_feat, seq_len=seq_len)
         self.coco_eft_dataset = coco_temporal(
             # 'exp/pt_files_3doh/person_keypoints_train2017_pred.pt', 'coco_eft', train=True, seq_len=seq_len
             'new_coco.pt', 'coco_eft', train=True, seq_len=seq_len

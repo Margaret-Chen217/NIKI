@@ -2,6 +2,9 @@
 import argparse
 import os
 
+import sys
+sys.path.append("D:\\FinalProject\\Demo\\niki_origin\\NIKI")
+
 import cv2
 import joblib
 import numpy as np

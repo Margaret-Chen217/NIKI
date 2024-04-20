@@ -15,7 +15,7 @@ from niki.utils.occlusion_utils import translate_img_path
 # from niki.models.layers.smpl.SMPL import SMPL_layer
 from niki.utils.pose_utils import (calc_cam_scale_trans_const_scale,
                                    calc_cam_scale_trans_refined1,
-                                   normalize_uv_temporal, reconstruction_error)
+                                   normalize_uv_temporal, reconstruction_error, calc_cam_scale_trans)
 # from niki.utils.post_process import *
 from niki.utils.transforms import (get_affine_transform, get_single_image_crop,
                                    im_to_torch)
@@ -725,6 +725,8 @@ class hp3d_dataset_temporal(data.Dataset):
             # if diff > 0:
             #     print(cam_scale_trans, cam_valid, diff)
             #     print([used_scale, trans[0], trans[1]], cam_valid2, diff2, diff3, 'new')
+            print(trans.shape)
+            print(cam_scale_trans2.shape)
             cam_scale_trans2[1:] = trans
 
             scale_trans[idx, :3] = cam_scale_trans2
