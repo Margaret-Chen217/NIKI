@@ -12,7 +12,7 @@ DATASET:
   valid_paths:
     - ''
 train_batch: 64
-num_workers: 0
+num_workers: 8
 seq_len: 16
 learnable_emb: True
 lr_steps:

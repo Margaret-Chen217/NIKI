@@ -183,7 +183,7 @@ def main():
 
         valid_loader_pred_3doh = torch.utils.data.DataLoader(
             valid_dataset_pred_3doh, batch_size=32, shuffle=False,
-            num_workers=0, drop_last=False, persistent_workers=False)
+            num_workers=4, drop_last=False, persistent_workers=True)
     else:
         valid_dataset_pred_pw3d = naive_dataset_temporal(
             opt.DATASET.valid_paths['3dpw_xocc'], '', dataset_name='pw3d', train=False, usage='xyz', occlusion=False, seq_len=opt.seq_len)
@@ -195,24 +195,24 @@ def main():
 
     train_loader = torch.utils.data.DataLoader(
         train_dataset, batch_size=opt.train_batch, shuffle=True,
-        num_workers=opt.num_workers, drop_last=False, persistent_workers=False,
+        num_workers=opt.num_workers, drop_last=False, persistent_workers=True,
         worker_init_fn=_init_fn)
 
     valid_loader_pred_h36m = torch.utils.data.DataLoader(
         valid_dataset_pred_h36m, batch_size=32, shuffle=False,
-        num_workers=0, drop_last=False, persistent_workers=False)
+        num_workers=4, drop_last=False, persistent_workers=True)
 
     valid_loader_pred_pw3d = torch.utils.data.DataLoader(
         valid_dataset_pred_pw3d, batch_size=32, shuffle=False,
-        num_workers=0, drop_last=False, persistent_workers=False)
+        num_workers=4, drop_last=False, persistent_workers=True)
 
     valid_loader_pred_h36m_noocc = torch.utils.data.DataLoader(
         valid_dataset_pred_h36m_noocc, batch_size=32, shuffle=False,
-        num_workers=0, drop_last=False, persistent_workers=False)
+        num_workers=4, drop_last=False, persistent_workers=True)
 
     valid_loader_pred_pw3d_noocc = torch.utils.data.DataLoader(
         valid_dataset_pred_pw3d_noocc, batch_size=32, shuffle=False,
-        num_workers=0, drop_last=False, persistent_workers=False)
+        num_workers=4, drop_last=False, persistent_workers=True)
 
     lr = 1e-4
 

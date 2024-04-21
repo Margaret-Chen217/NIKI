@@ -15,7 +15,7 @@ DATASET:
     3dpw_xocc: './data/annot/3dpw_test_db_xyz17new_addcam_bbox_hrnetw48_pred_amb_sigma_adduv.pt'
     h36m: './data/annot/h36m_test_front_25fps_tight_smpl_db_xyz17_filterednew_add_cam_hrnetw48_pred_sigma.pt'
     3dpw: './data/annot/3dpw_test_db_xyz17new_addcam_hrnetw48_pred_sigma_adduv.pt'
-train_batch: 32
-num_workers: 0
+train_batch: 64
+num_workers: 8
 seq_len: 16
 learnable_emb: True
